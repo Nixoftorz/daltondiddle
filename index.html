@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platformer Game</title>
+    <style>
+        body { margin: 0; }
+        canvas { background: #eee; display: block; margin: auto; }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Game variables
+        let player = { x: 50, y: 400, width: 50, height: 50, color: 'blue', speed: 5, gravity: 1, jumpPower: 15, velocityY: 0, isJumping: false, score: 0, lives: 3};
+        let bullets = [];
+        let enemies = [];
+        let powerUps = [];
+        let isGameOver = false;
+
+        // Keyboard input
+        let keys = {};
+        window.addEventListener('keydown', (e) => { keys[e.key] = true; });
+        window.addEventListener('keyup', (e) => { keys[e.key] = false; });
+
+        function gameLoop() {
+            if (isGameOver) return;
+            updateGame();
+            drawGame();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function updateGame() {
+            // Player movement
+            if (keys['ArrowLeft']) { player.x -= player.speed; }
+            if (keys['ArrowRight']) { player.x += player.speed; }
+            if (keys['ArrowUp'] && !player.isJumping) { player.velocityY = -player.jumpPower; player.isJumping = true; }
+
+            player.velocityY += player.gravity;
+            player.y += player.velocityY;
+
+            if (player.y + player.height >= canvas.height) {
+                player.y = canvas.height - player.height;
+                player.isJumping = false;
+                player.velocityY = 0;
+            }
+
+            // Shooting
+            if (keys['f']) {
+                bullets.push({ x: player.x + player.width, y: player.y + 20, width: 10, height: 5, speed: 10 });
+            }
+            // Update bullets
+            for (let i = 0; i < bullets.length; i++) {
+                bullets[i].x += bullets[i].speed;
+                if (bullets[i].x > canvas.width) bullets.splice(i--, 1);
+            }
+
+            // Update enemies
+            if (Math.random() < 0.01) {
+                enemies.push({ x: canvas.width, y: canvas.height - 50, width: 50, height: 50, speed: 2 });
+            }
+            for (let i = 0; i < enemies.length; i++) {
+                enemies[i].x -= enemies[i].speed;
+                if (enemies[i].x < 0) {
+                    enemies.splice(i--, 1);
+                    player.lives--;
+                    if (player.lives <= 0) {
+                        isGameOver = true;
+                    }
+                }
+            }
+
+            // Check collision
+            checkCollisions();
+        }
+
+        function checkCollisions() {
+            for (let i = 0; i < bullets.length; i++) {
+                for (let j = 0; j < enemies.length; j++) {
+                    if (bulletCollision(bullets[i], enemies[j])) {
+                        bullets.splice(i--, 1);
+                        enemies.splice(j--, 1);
+                        player.score += 10;
+                        break;
+                    }
+                }
+            }
+        }
+
+        function bulletCollision(bullet, enemy) {
+            return bullet.x < enemy.x + enemy.width &&
+                   bullet.x + bullet.width > enemy.x &&
+                   bullet.y < enemy.y + enemy.height &&
+                   bullet.y + bullet.height > enemy.y;
+        }
+
+        function drawGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+
+            // Draw bullets
+            bullets.forEach(bullet => {
+                ctx.fillStyle = 'red';
+                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+            });
+
+            // Draw enemies
+            ctx.fillStyle = 'green';
+            enemies.forEach(enemy => {
+                ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+            });
+
+            // Draw score and lives
+            ctx.fillStyle = 'black';
+            ctx.font = '20px Arial';
+            ctx.fillText('Score: ' + player.score, 10, 20);
+            ctx.fillText('Lives: ' + player.lives, 10, 50);
+
+            if (isGameOver) {
+                ctx.fillText('Game Over', canvas.width / 2 - 50, canvas.height / 2);
+            }
+        }
+
+        gameLoop();
+    </script>
+</body>
+</html>
