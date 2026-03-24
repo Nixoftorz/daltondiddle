@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platformer Game</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { background: #87CEEB; display: block; margin: auto; }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let player = { x: 50, y: 300, width: 50, height: 50, dy: 0, gravity: 0.5, jumpPower: -10, grounded: true };
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawPlayer();
+            updatePlayer();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function drawPlayer() {
+            ctx.fillStyle = 'red';
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+        }
+
+        function updatePlayer() {
+            if (!player.grounded) {
+                player.dy += player.gravity;
+                player.y += player.dy;
+            }
+
+            if (player.y + player.height >= canvas.height) {
+                player.y = canvas.height - player.height;
+                player.dy = 0;
+                player.grounded = true;
+            }
+
+            if (player.y <= 0) {
+                player.y = 0;
+                player.dy = 0;
+            }
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.code === 'Space' && player.grounded) {
+                player.dy = player.jumpPower;
+                player.grounded = false;
+            }
+        });
+
+        gameLoop();
+    </script>
+</body>
+</html>
